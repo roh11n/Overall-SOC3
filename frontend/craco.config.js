@@ -32,6 +32,18 @@ function makeDevServerV5Compatible(devServerConfig) {
     "Cross-Origin-Resource-Policy": "same-origin",
   };
 
+  // Don't let the benign "ResizeObserver loop" warning trigger the full-screen
+  // dev error overlay (it otherwise visually blocks dashboards/modals in preview).
+  compatibleConfig.client = {
+    ...(typeof compatibleConfig.client === "object" ? compatibleConfig.client : {}),
+    overlay: {
+      errors: true,
+      warnings: false,
+      runtimeErrors: (error) =>
+        !(error && typeof error.message === "string" && error.message.includes("ResizeObserver loop")),
+    },
+  };
+
   if (onBeforeSetupMiddleware || setupMiddlewares) {
     compatibleConfig.setupMiddlewares = (middlewares, devServer) => {
       if (onBeforeSetupMiddleware) {
@@ -127,22 +139,6 @@ webpackConfig.devServer = (devServerConfig) => {
 
   return devServerConfig;
 };
-
-// Wrap with visual edits (automatically adds babel plugin, dev server, and overlay in dev mode)
-if (isDevServer) {
-  try {
-    const { withVisualEdits } = require("@emergentbase/visual-edits/craco");
-    webpackConfig = withVisualEdits(webpackConfig);
-  } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND' && err.message.includes('@emergentbase/visual-edits/craco')) {
-      console.warn(
-        "[visual-edits] @emergentbase/visual-edits not installed — visual editing disabled."
-      );
-    } else {
-      throw err;
-    }
-  }
-}
 
 const configureDevServer = webpackConfig.devServer;
 webpackConfig.devServer = (devServerConfig) =>

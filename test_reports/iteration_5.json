@@ -1,0 +1,23 @@
+{
+  "summary": "Backend-only verification of the robust FP/TP close-reason classification. 4/4 pytest tests PASS. Tenant 'all' (real 5,299-row upload) reports false_positive_rate=14.4 (764/5299) and true_positive_rate=0.0 exactly as expected. Uploaded a 10-row mixed-variant XSOAR CSV to tenant 'acme-corp' with close reasons: False-Positive, Benign, FP (FP variants), True Positive, Malicious, Confirmed (TP variants), Other x2 + Duplicate x2 (neither). SOC Manager returned false_positive_rate=30.0 and true_positive_rate=30.0 (3/10 each), close_reason_mix retained Other=2 and Duplicate=2. Detection Engineering rule effectiveness reflected the same counting: RuleA fp_rate=100.0, RuleB fp_rate=0.0, RuleC fp_rate=0.0. After teardown, acme-corp rows=0 and tenant 'all' remained untouched at 5299 rows.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_fp_tp_classification.py",
+    "/app/test_reports/pytest/fp_tp_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "xsoar_ingest._is_tp() classifies 'mitigated', 'remediated', 'escalated' as TRUE POSITIVE. This may over-count TP in real data — 'mitigated' can just mean the incident was handled regardless of verdict. Consider narrowing to only explicit malicious/true-positive verdict tokens.",
+    "compute_detection_overlay uses `_is_tp(cr) or 'resolved' in (cr or '').lower()` for TP, but compute_soc_manager summary uses only `_is_tp`. This inconsistency means 'Resolved' close_reason counts as TP for per-rule precision/recall but NOT for the top-level true_positive_rate — verify this is intentional.",
+    "The MITRE tactic overlay is only enabled when the XSOAR CSV carries MITRE Tactic Name / Technique Name; without them the detection-engineering endpoint returns data_status=empty even when rule data exists (soft dependency worth documenting)."
+  ],
+  "updated_files": ["/app/backend/tests/test_fp_tp_classification.py"],
+  "success_rate": {"backend": "100%", "frontend": "not tested"},
+  "test_credentials": "admin@mssp-soc.io / Soc-I10eekKuxiW23Q! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Temporary 10-row acme_mixed.csv uploaded to tenant 'acme-corp' via POST /api/upload/data?source=xsoar and deleted at the end via DELETE /api/dashboard/soc-manager/data?tenant_id=acme-corp. Tenant 'all' NEVER touched.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_fp_tp_classification.py is idempotent and safe to re-run — it always cleans up acme-corp. Uses REACT_APP_BACKEND_URL from env; run with `-o addopts=\"\"` if pytest.ini's xdist config causes issues. Tenant 'all' has 5299 rows (764 FP variants → 14.4%) and should be treated read-only.",
+  "rca of the issue": "N/A — user's 14% FP-rate concern was a data-interpretation question, not a bug. The reported 14.4% is arithmetically correct (764 False Positive / 5299 closed). The change under test is a defensive enhancement to _is_fp/_is_tp to catch label variants (False-Positive, Benign, FP / True Positive, Malicious, Confirmed) so future uploads with different labelling conventions produce accurate rates. Verified both the sanity assertion on real data and the new variant-matching logic."
+}

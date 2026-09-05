@@ -2,74 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+/* Cabinet Grotesk fallback → Space Grotesk. Realistic pairing. */
+
+:root {
+    --font-heading: "Space Grotesk", "Cabinet Grotesk", ui-sans-serif, system-ui;
+    --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system;
+    --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 @layer base {
     :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
+        /* Light: Exec Swiss Brutalist */
+        --background: 210 20% 98%;
+        --foreground: 220 39% 11%;
         --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
+        --card-foreground: 220 39% 11%;
         --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
+        --popover-foreground: 220 39% 11%;
+        --primary: 221 83% 53%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 220 14% 96%;
+        --secondary-foreground: 220 39% 11%;
+        --muted: 220 14% 96%;
+        --muted-foreground: 220 9% 46%;
+        --accent: 221 83% 96%;
+        --accent-foreground: 221 83% 30%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 13% 91%;
+        --input: 220 13% 91%;
+        --ring: 221 83% 53%;
+        --success: 158 64% 42%;
+        --warning: 38 92% 50%;
+        --danger: 0 84% 60%;
+        --chart-1: 221 83% 53%;
+        --chart-2: 158 64% 42%;
+        --chart-3: 38 92% 50%;
+        --chart-4: 262 68% 55%;
+        --chart-5: 0 84% 60%;
         --radius: 0.5rem;
     }
+
     .dark {
-        --background: 0 0% 3.9%;
+        /* Dark: SOC/Ops Retro-Futurism */
+        --background: 240 6% 6%;
         --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
+        --card: 240 5% 8%;
         --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
+        --popover: 240 5% 8%;
         --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
+        --primary: 217 91% 60%;
+        --primary-foreground: 240 6% 6%;
+        --secondary: 240 4% 14%;
         --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
+        --muted: 240 4% 14%;
+        --muted-foreground: 240 5% 65%;
+        --accent: 217 91% 20%;
+        --accent-foreground: 217 91% 80%;
+        --destructive: 0 72% 51%;
         --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+        --border: 240 4% 18%;
+        --input: 240 4% 18%;
+        --ring: 217 91% 60%;
+        --success: 158 64% 52%;
+        --warning: 38 92% 55%;
+        --danger: 0 72% 60%;
+        --chart-1: 217 91% 60%;
+        --chart-2: 158 64% 52%;
+        --chart-3: 38 92% 55%;
+        --chart-4: 268 83% 68%;
+        --chart-5: 340 82% 62%;
     }
 }
 
@@ -77,39 +81,102 @@ code {
     * {
         @apply border-border;
     }
+    html,
     body {
         @apply bg-background text-foreground;
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-heading);
+        letter-spacing: -0.02em;
+    }
+    code,
+    pre,
+    .font-mono {
+        font-family: var(--font-mono);
     }
 }
 
-@layer base {
-    [data-debug-wrapper="true"] {
-        display: contents !important;
-    }
+/* Selection */
+::selection {
+    background: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+}
 
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Grid backdrop for dark hero */
+.grid-backdrop {
+    background-image:
+        linear-gradient(hsl(var(--border) / 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: -1px -1px;
+}
+
+/* Glow ring for AI panel */
+.ai-glow {
+    position: relative;
+    overflow: hidden;
+}
+.ai-glow::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    border-radius: inherit;
+    background: conic-gradient(
+        from 0deg,
+        hsl(var(--primary) / 0.6),
+        hsl(var(--chart-4) / 0.5),
+        hsl(var(--chart-2) / 0.5),
+        hsl(var(--primary) / 0.6)
+    );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: aiSpin 8s linear infinite;
+    pointer-events: none;
+}
+@keyframes aiSpin {
+    to {
+        transform: rotate(360deg);
     }
+}
+
+/* KPI number tabular alignment */
+.tabular {
+    font-variant-numeric: tabular-nums;
+}
+
+.count-up {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Persona chip accent bar */
+.persona-bar {
+    box-shadow: inset 3px 0 0 hsl(var(--primary));
 }

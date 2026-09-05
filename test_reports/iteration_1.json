@@ -1,0 +1,31 @@
+{
+  "summary": "Verified all 5 bug fixes on SOC Manager / Executive / Detection Engineering dashboards. Backend: 9/9 pytest tests passing. Frontend: verified via Playwright — login → upload sample XSOAR CSV → check KPIs → cleanup. All expected values match the spec (MTTD=13m, MTTR=0.48h, detection_coverage=28.6, Critical=2, High=2, MITRE heatmap hits are dynamic and change with a different upload). Cleaned up uploaded data via DELETE /api/dashboard/soc-manager/data?tenant_id=all.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Detection Engineering / SOC Manager", "issues": ["Recharts prints repeated console warnings 'The width(-1) and height(-1) of chart should be greater than 0' — cosmetic only, charts still render; likely a ResponsiveContainer mounted before parent has size."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_bugfixes_iteration1.py",
+    "/app/test_reports/pytest/bugfixes_iter1.xml"
+  ],
+  "action_items": [
+    "(Optional) Silence Recharts width/height warnings by giving ResponsiveContainer parent an explicit min-height on initial mount."
+  ],
+  "critical_code_review_comments": [
+    "Backend uploads return an X_ID and bound_rows correctly; parse_rows handles Actual Time Taken column giving realistic MTTR (0.48h) vs wall-clock.",
+    "compute_soc_manager severity_distribution now covers Critical/High/Medium/Low/Informational as expected.",
+    "compute_detection uses live_tech_hits from xsoar_rows so heatmap hits reflect the uploaded CSV (verified with alt CSV — old techniques disappear, new techniques appear)."
+  ],
+  "updated_files": ["/app/backend/tests/test_bugfixes_iteration1.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mssp-soc.io / Soc-I10eekKuxiW23Q! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Uploaded the sample XSOAR CSV to tenant=all during tests, then cleared via DELETE /api/dashboard/soc-manager/data?tenant_id=all so dashboards are back to empty as required.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_bugfixes_iteration1.py already covers all 5 fixes end-to-end (upload → assertions → alt upload for live-data check → cleanup). Frontend routes are /soc-manager, / (executive), /detection. Login form uses data-testid login-email / login-password / login-submit. Token stored in localStorage as mssp_token. Tests auto-load REACT_APP_BACKEND_URL from /app/frontend/.env if not exported.",
+  "rca of the issue": "N/A — all 5 previously reported bug fixes verified working."
+}

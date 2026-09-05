@@ -1,0 +1,22 @@
+{
+  "summary": "Verified fix for 'Bound to dashboard: 0 rows' bug in xsoar_ingest.parse_rows caused by duplicate-normalizing column headers. Added regression suite /app/backend/tests/test_dup_column_fix.py (5 tests, all pass). Confirmed: (1) CSV with both 'occurred' AND 'Occurred', 'created' AND 'Created' plus phase/L2_Owner/analystJustification columns uploads via POST /api/upload/data?source=xsoar&tenant_id=all and bound_rows == 60 (== rows_in_file), no error field; (2) GET /api/dashboard/soc-manager returns data_status='live' with summary.total_incidents=60 and non-zero mttd_minutes / mttr_hours; (3) Regression: normal CSV without duplicate columns still binds all 10 rows; (4) PPTX export GET /api/export/pptx?tenant_id=all&period=quarterly returns 200 with valid 9-slide zip after dup upload; (5) Cleanup via DELETE /api/dashboard/soc-manager/data succeeds. Frontend UI verified: SOC Manager -> soc-upload-btn -> UploadModal (XSOAR source) uploaded the dup-column CSV and displayed 'Ingestion complete — Rows in file: 55 — Bound to dashboard: 55 rows → SOC Manager / Detection / Executive'.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_dup_column_fix.py",
+    "/app/test_reports/pytest/dup_column_fix.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "xsoar_ingest.parse_rows dedup fix (df.loc[:, ~duplicated(keep='first')]) is correct and minimal; consider logging a warning listing dropped duplicate columns so operators know their export had ambiguous headers.",
+    "server.upload_data still returns bound_rows=0 silently when parse_rows raises; the exception is only surfaced in xsoar_ingest_error field — UI does not display xsoar_ingest_error, only the generic '0 rows matched' toast. Consider surfacing xsoar_ingest_error in the modal/toast for faster user-facing RCA."
+  ],
+  "updated_files": ["/app/backend/tests/test_dup_column_fix.py", "/app/test_reports/iteration_3.json"],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "100% (UI upload of dup-column CSV bound all rows)"},
+  "test_credentials": "admin@mssp-soc.io / Soc-I10eekKuxiW23Q!",
+  "seed_data_creation": "Dup-column CSV (60 rows) and normal CSV (10 rows) uploaded to tenant_id=all during tests; cleaned up in test_99_cleanup and post-UI-test DELETE.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run regression: python -m pytest backend/tests/test_dup_column_fix.py -o addopts= . The dup-column dedup happens in xsoar_ingest.parse_rows immediately after column normalization (line 124). If a future edit reintroduces duplicates (e.g., new canonical mapping), the ValueError 'truth value of a Series is ambiguous' will resurface and parse_rows returns []; server.upload_data will then set bound_rows=0 and xsoar_ingest_error accordingly.",
+  "rca of the issue": "RCA (already fixed by main agent): XSOAR exports can contain headers that normalize to the same canonical column (e.g., both 'occurred' and 'Occurred' → 'occurred'; both 'created' and 'Created' → 'created'). After df.columns = [_norm_col(c) ...], pandas allows duplicate labels; row.get('occurred') then returns a Series (not scalar), and _parse_dt / _bool_ish raise 'ValueError: truth value of a Series is ambiguous' via pd.isna checks. parse_rows caught the exception at the caller layer, returning [] rows -> bound_rows=0. Fix: df = df.loc[:, ~pd.Index(df.columns).duplicated(keep='first')] drops duplicate normalized columns keeping the first occurrence, guaranteeing scalar access. Verified fix produces bound_rows == rows_in_file for 60-row dup CSV."
+}

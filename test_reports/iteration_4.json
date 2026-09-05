@@ -1,0 +1,28 @@
+{
+  "summary": "Full backend validation of template-based QBR PPTX export. New pytest suite /app/backend/tests/test_qbr_pptx_template.py (11 tests, all pass). Verified against real tenant 'all' data (5,299-row XSOAR upload, READ-ONLY): (1) GET /api/export/pptx?tenant_id=all&period=quarterly returns 200 with pptx MIME and exactly 8 slides; (2) Zero occurrences of 'Coromandel'/'COROMANDEL'/standalone 'CIL' and no leftover CIL numbers (1,803 / 9,889 / 3,510) in any slide text or table cell; (3) Cover shows tenant display name 'All Tenants' and Deloitte branding retained; (4) Executive Overview (slide 3) shows live incidents '5,299' in Quarterly Signal tile, MTTD in minutes, MTTR in hours, SLA % populated; (5) Log Sources slide headline matches '<TopSource> Drove <pct>% of Incidents This Period' with clean source name (no leading [\" bracket/quote artifact) — actual top source rendered was a Check Point log source at ~26%; (6) Alert Volume slide title contains '5,299'; (7) MITRE slide shows title 'MITRE ATT&CK Tactic Activity' + N/A note and heat-map body cells + tactic column all blank (no leftover 669 / Credential Access CIL rows); (8) monthly & weekly periods also return 200 valid 8-slide PPTX with no CIL leftovers. Regression on tenant_id='acme-corp': uploaded 8-row XSOAR CSV with MITRE tactics via POST /api/upload/data?source=xsoar → export has populated MITRE table body with tactic rows (Credential Access, Execution, Initial Access, Exfiltration, Persistence) and log-source slide shows uploaded sources (Active Directory / O365 / SentinelOne / Firewall). Cleaned up via DELETE /api/dashboard/soc-manager/data?tenant_id=acme-corp (204). Tenant 'all' was NEVER modified.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_qbr_pptx_template.py",
+    "/app/test_reports/pytest/qbr_pptx_template.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "pptx_template.py hard-codes shape indices per slide (e.g., _set_idx(sl, 4, sla), _set_idx(sl, 46, total_s) on slide 5). This is fragile: any minor edit to the template .pptx (moving/adding a shape) silently shifts all downstream indices and will corrupt KPI values with no test-time signal. Consider tagging by shape.name or by nearest-label heuristic, or at minimum add an assertion in build_from_template that len(shapes) matches the expected count per kept slide.",
+    "The _tokens() rebranding uses per-run substring replace. If PowerPoint splits 'Coromandel' across two runs (very common after in-place edits), replacement silently no-ops. Empirically it did not trigger on the current template, but this should be hardened by walking XML at the a:t level or by first joining runs. Recommend adding a post-build asserion sweep for 'Coromandel'/'CIL'.",
+    "build_pptx fallback to native builder on exception is fine but currently swallows the template exception silently; the tenant would receive a legacy 9-slide deck instead of the expected 8-slide template deck. Recommend logging a WARNING with tenant_id + exception so ops can see silent template drift.",
+    "Log-source pct in slide 8 is rendered as f\"{sc['pct']}% ({sc['count']}/{total or 0})\" — divisor uses 'total or 0' which will produce '/0' if total is None. Not currently triggered because when total is None the whole deck is placeholders anyway, but worth guarding.",
+    "KEEP set + _keep_slides is index-based and depends on the template never reordering. A defensive: build KEEP by matching slide title text (e.g., first shape.text contains 'Executive Summary') would survive template revs."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_qbr_pptx_template.py",
+    "/app/test_reports/iteration_4.json"
+  ],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "n/a (backend-only per request)"},
+  "test_credentials": "admin@mssp-soc.io / Soc-I10eekKuxiW23Q!",
+  "seed_data_creation": "Regression test uploaded an 8-row XSOAR CSV to tenant_id='acme-corp' and deleted it in the same test (finally block). Tenant 'all' (5,299 rows) was NOT touched — only read via GET /api/export/pptx.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Run: python -m pytest backend/tests/test_qbr_pptx_template.py -o addopts= -v. The suite takes ~2 minutes because each PPTX export is ~25MB (template embeds media). If ingest cache changes cause tenant 'all' total to shift away from 5,299, update the '5,299' literal in test_all_tenant_executive_overview_live_values / test_all_tenant_alert_volume_slide. Note the older test file test_qbr_pptx.py still asserts 9-slide count and uploads to tenant 'all' — it is now obsolete under the template flow and will fail if re-run; recommend main agent delete it or gate it behind a marker.",
+  "rca of the issue": "N/A — feature works end-to-end; no bug found."
+}

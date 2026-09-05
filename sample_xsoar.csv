@@ -1,0 +1,9 @@
+id,name,type,severity,status,owner,playbookid,occurred,closed,created,closereason,slabreached,playbookname
+1001,Phishing email reported,Phishing,High,Closed,analyst1,pb-phish,2026-05-01T08:00:00Z,2026-05-01T09:30:00Z,2026-05-01T08:05:00Z,Resolved,False,Phishing Triage
+1002,Suspicious login,Access,Medium,Closed,analyst2,pb-auth,2026-05-02T10:00:00Z,2026-05-02T13:00:00Z,2026-05-02T10:05:00Z,Resolved,False,Auth Investigate
+1003,Malware detected on host,Malware,Critical,Closed,analyst1,pb-mal,2026-05-03T11:00:00Z,2026-05-04T02:00:00Z,2026-05-03T11:10:00Z,Resolved,True,Malware Containment
+1004,Brute force attempt,Access,High,Closed,analyst3,pb-auth,2026-05-04T09:00:00Z,2026-05-04T10:15:00Z,2026-05-04T09:05:00Z,Resolved,False,Auth Investigate
+1005,Data exfil alert,Exfiltration,Critical,Open,analyst2,pb-exfil,2026-05-05T14:00:00Z,,2026-05-05T14:05:00Z,,True,Exfil Response
+1006,Ransomware indicator,Malware,Critical,Closed,analyst1,pb-mal,2026-05-06T07:00:00Z,2026-05-06T12:00:00Z,2026-05-06T07:05:00Z,Resolved,False,Malware Containment
+1007,Suspicious PowerShell,Execution,High,Closed,analyst3,pb-exec,2026-05-07T16:00:00Z,2026-05-07T17:00:00Z,2026-05-07T16:05:00Z,Resolved,False,Endpoint Triage
+1008,Port scan detected,Recon,Low,Closed,analyst2,pb-recon,2026-05-08T12:00:00Z,2026-05-08T12:45:00Z,2026-05-08T12:05:00Z,Resolved,False,Recon Review

@@ -1,0 +1,120 @@
+{
+  "theme": "Dark SOC/Ops & Light Professional/Exec",
+  "typography": {
+    "strategy": "Swiss Brutalist (Tech/Art)",
+    "fonts": {
+      "headings": "Cabinet Grotesk",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-bold",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-semibold",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "h4": "text-lg font-medium",
+      "body": "text-sm sm:text-base leading-relaxed",
+      "labels": "text-xs tracking-[0.2em] uppercase font-bold text-muted-foreground"
+    }
+  },
+  "colors": {
+    "archetype": "Swiss & High-Contrast (Light) / Retro-Futurism (Dark)",
+    "light": {
+      "background": "#F8F9FA",
+      "surface": "#FFFFFF",
+      "border": "#E5E7EB",
+      "text": "#111827",
+      "muted": "#6B7280",
+      "primary": "#2563EB", 
+      "secondary": "#0F172A",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "danger": "#EF4444"
+    },
+    "dark": {
+      "background": "#09090B",
+      "surface": "#121214",
+      "border": "#27272A",
+      "text": "#FAFAFA",
+      "muted": "#A1A1AA",
+      "primary": "#3B82F6",
+      "secondary": "#1E293B",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "danger": "#EF4444"
+    }
+  },
+  "layouts": {
+    "main_container": "flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300",
+    "sidebar": "w-64 border-r border-border/40 bg-surface/50 backdrop-blur-xl hidden md:flex flex-col",
+    "content_wrapper": "flex-1 overflow-y-auto bg-background",
+    "header": "sticky top-0 z-50 flex h-16 items-center justify-between px-6 border-b border-border/40 bg-surface/80 backdrop-blur-md",
+    "dashboard_grid": "grid grid-cols-1 md:grid-cols-4 lg:grid-cols-12 gap-6 p-6",
+    "cards": {
+      "kpi": "col-span-1 md:col-span-2 lg:col-span-3 flex flex-col p-6 rounded-xl border border-border/50 bg-surface shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md",
+      "chart": "col-span-1 md:col-span-4 lg:col-span-6 flex flex-col p-6 rounded-xl border border-border/50 bg-surface shadow-sm",
+      "heatmap_full": "col-span-1 md:col-span-4 lg:col-span-12 flex flex-col p-6 rounded-xl border border-border/50 bg-surface shadow-sm overflow-x-auto"
+    }
+  },
+  "components": {
+    "navigation": "Sidebar with NavLinks. Active state uses solid primary color border on left, slightly tinted background. Keep it dense and professional.",
+    "kpi_card": "Include large number, delta indicator (green/red arrow), and minimal sparkline (recharts) at the bottom. Use solid bold typography for values.",
+    "mitre_heatmap": "Table/Grid layout. Tactics as columns, Techniques as cells. Color code cells based on detection coverage or threat frequency. Use gradient or distinct severity colors (e.g., Gray for none, Blue/Red intensity for hits). Implement hover states to reveal sub-techniques.",
+    "data_table": "Shadcn Table with sortable headers, sticky headers, and pagination. Apply dense padding for operational data.",
+    "time_tabs": "Shadcn Tabs (Weekly, Monthly, Quarterly). Make them pill-shaped or segmented controls with clear active states.",
+    "theme_toggle": "Sun/Moon icon button in the header. Persist in localStorage.",
+    "upload_zone": "Drag-and-drop zone with dashed border, icon, and 'Select File' button for CSV/Excel ingestion. Add subtle hover effect.",
+    "ai_recommendations": "A prominent panel on the Executive overview highlighting text insights with a subtle gradient or glowing border (The Tracing Beam concept sparingly)."
+  },
+  "charts_libraries": {
+    "recommendation": "Recharts for standard Line/Bar/Area/Pie. Visx or custom CSS Grid for MITRE Heatmap. RadialBarChart for composite/health scores.",
+    "guidelines": "Remove grid lines or make them very subtle (opacity 0.1). Hide axes lines. Use custom tooltips with dark background and clear typography. Avoid generic colors; use the palette provided."
+  },
+  "visual_enhancers": {
+    "glassmorphism": "Use on sticky headers and dropdowns: backdrop-blur-md bg-background/80 border-border/40",
+    "neumorphism": "Not recommended for this data-dense app.",
+    "borders": "Use subtle borders on cards: border border-border/50. Hover states should slightly increase border opacity/color.",
+    "animations": "Framer Motion for page transitions (fade + slide up 10px). Animate KPI numbers counting up."
+  },
+  "motion": {
+    "page_transition": "initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}",
+    "hover_effects": "transition-transform duration-200 ease-out hover:-translate-y-1"
+  },
+  "media": {
+    "image_urls": {
+      "user_avatar": "https://images.unsplash.com/photo-1581841064838-a470c740e8ee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NDh8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBhdmF0YXIlMjBwb3J0cmFpdHxlbnwwfHx8fDE3ODM0MzcyMjd8MA&ixlib=rb-4.1.0&q=85",
+      "executive_avatar": "https://images.pexels.com/photos/30426363/pexels-photo-30426363.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure text meets APCA standards. Provide high contrast mode.",
+    "focus": "All interactive elements must have focus:ring-2 focus:ring-primary focus:outline-none.",
+    "aria": "Use aria-labels for icon buttons. role='tablist' for tabs."
+  },
+  "instructions_to_main_agent": [
+    "Install necessary libraries: lucide-react, recharts, clsx, tailwind-merge, framer-motion, @radix-ui/react-tabs, @radix-ui/react-dialog, @radix-ui/react-slot, sonner.",
+    "Setup routing with dummy JWT auth (store in state/localStorage) to toggle personas: soc_manager, client, detection_engineer, ti_analyst, automation_engineer. Provide a login screen to select persona.",
+    "Build the Sidebar Navigation that dynamically shows links based on the active persona role, but keep all 6 dashboards accessible for demo purposes.",
+    "Create a reusable Layout component containing Sidebar and Header (with user profile, role selector, theme toggle).",
+    "Develop the Landing Page (Cross-Functional Executive Overview) with overall SOC Health Score, Risk Score, Incident Volume, MTTR, AI Recommendations.",
+    "Implement the 5 Persona Dashboards: SOC Manager, Client Executive, Detection Engineering, Threat Intelligence, SOAR/Automation.",
+    "Each dashboard MUST include the Weekly/Monthly/Quarterly tabs controlling the data views.",
+    "For the MITRE Heatmap, create a reusable component mapping tactics to columns and techniques to cells, colored by risk/coverage.",
+    "Include an 'Upload Data' button in the Header or pages that opens a Modal with a drag-and-drop CSV/Excel file upload UI.",
+    "Ensure the theme can be toggled and persists (Dark/Light). Map Tailwind dark variant to a class on the html/body.",
+    "Add 'data-testid' to all interactive elements like buttons, tabs, inputs, and major sections."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "You tend to converge toward generic, 'on distribution' outputs. Make creative, distinctive frontends that surprise and delight.",
+    "Don't make generic centered layouts. Use layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) for sticky navs/headers.",
+    "You MUST NOT apply universal transition (transition: all). Use specific transitions.",
+    "You MUST NOT center align the app container (.App { text-align: center; }).",
+    "Always use modern button styles (pill-shaped or sharp) with interaction animations.",
+    "NEVER use AI assistant Emoji characters for icons. Use Lucide icons.",
+    "Every interaction needs micro-animations - hover states, transitions.",
+    "Use generous spacing (2-3x more than usual) to avoid cramped designs.",
+    "Prioritize Shadcn UI patterns and override defaults as needed to match the brand.",
+    "Use sonner for toasts.",
+    "Never use placeholder text for images. Use the provided image URLs."
+  ]
+}

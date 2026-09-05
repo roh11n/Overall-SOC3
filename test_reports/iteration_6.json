@@ -1,0 +1,24 @@
+{
+  "summary": "Deployment validation of MSSP SOC Analytics Dashboard with local Ollama qwen2.5:1.5b. All critical checks passed: health OK, login 200, copilot/status ready:true & model=qwen2.5:1.5b, /api/copilot/chat returned source='hf-llm' and model='qwen2.5:1.5b' (confirmed via direct curl AND end-to-end UI flow through IRIS panel), /api/export/pptx returned HTTP 200 with valid PPTX (PK zip signature, ~25MB), executive overview shows LIVE data (data_status='live', 8 incidents, SLA 100%, MTTR 3.93h, health 50, risk 0.8). All 7 persona routes (executive, soc-manager, client, detection, threat-intel, soar, comparison, settings) loaded without any page or console errors while logged in. IRIS launcher/panel/input/send-btn testids all functional.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Non-blocking: the review_request references outdated test IDs (login-email-input/login-password-input/login-submit-button) but actual DOM uses login-email/login-password/login-submit. Consider aligning /app/frontend/src/constants/testIds/auth.js exports with actual attributes to avoid future confusion.",
+    "Non-blocking: some persona routes in the request differ from actual app routes (app uses /detection and /soar, not /detection-engineering and /soar-automation)."
+  ],
+  "critical_code_review_comments": [
+    "Deployment task only — no source code changes made. Backend correctly reads OLLAMA_BASE_URL/OLLAMA_MODEL from env. IRIS chat correctly labels source='hf-llm' when Ollama responds, falling back to 'rule' otherwise (verified real-model path is active)."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "100%", "frontend": "100%" },
+  "test_credentials": "admin@mssp-soc.io / Iris-df02a9d88045!Aa9 (works)",
+  "seed_data_creation": "No new seed created; sample_xsoar.csv already ingested for tenant 'all' (executive returns data_status='live').",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Ollama is a supervisor program; if IRIS ever returns source='rule', check `sudo supervisorctl status ollama` and GET /api/copilot/status.ready. Actual login testids: login-email, login-password, login-submit. IRIS testids: iris-copilot-launcher, iris-copilot-panel, iris-input, iris-send-btn. PPTX endpoint is /api/export/pptx (not /api/exports/pptx). Executive endpoint is /api/dashboard/executive."
+}
