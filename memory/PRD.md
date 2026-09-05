@@ -49,3 +49,10 @@ sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl sta
 - Executive detection coverage now reads rule-catalog MITRE coverage (falls back to XSOAR overlay); was hardcoded to overlay-only → 0.
 - Note: QRadar offenses (~4,927) and XSOAR incidents (~5,516) are separate source systems and are NOT expected to match 1:1.
 - Rule-catalog → heatmap hit mapping: catalog Rule Name matched to XSOAR incident name/rule_name; matched incident count = technique hit value.
+
+## Iteration 4 (2026-06) — PPTX log-source/MTTR + MITRE chart
+- PPTX page 3 (Exec Overview): 'new log sources added' + 'log sources integrated into SOC' now use real log-source data (were N/A / static template numbers).
+- PPTX page 4 (Exec Performance): 'log sources integrated' real; MTTR box now shows median MTTR (was N/A).
+- PPTX page 8 (MITRE): month heat-map table replaced with a stacked column chart 'MITRE ATT&CK Hits by Tactic' (hits from rule→incident matching, falls back to XSOAR tactic totals).
+- logsources_ingest: enabled = all rows except explicitly disabled (blank/None=enabled); added = recent 30d; exposes total_log_sources + total_enabled_log_sources + log_sources_added + log_sources_added_total.
+- SOC Manager: 3 log-source cards (Total / Enabled / Added 30d).

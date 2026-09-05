@@ -19,6 +19,7 @@ import tenants as tenants_mod
 import ti_ingest
 import xsoar_ingest
 import qradar_ingest
+import logsources_ingest
 
 logger = logging.getLogger("mssp-soc.scheduler")
 
@@ -89,6 +90,16 @@ async def build_bundle(db, period: str, tenant_id: str):
     all_data["qbr"] = await xsoar_ingest.compute_qbr(db, tenant_id)
     qradar = await qradar_ingest.compute(db, tenant_id)
     all_data["qradar"] = qradar
+    all_data["logsources"] = await logsources_ingest.compute(db, tenant_id)
+    # Per-tactic MITRE hit totals (from rule-catalog → XSOAR name matching) for
+    # the stacked-bar chart on the MITRE slide.
+    if _rules_res.get("data_status") == "live":
+        all_data["mitre_tactic_hits"] = [
+            {"tactic": t["tactic"], "hits": sum(x.get("hits", 0) for x in t.get("techniques", []))}
+            for t in _rules_res.get("mitre_heatmap", [])
+        ]
+    else:
+        all_data["mitre_tactic_hits"] = []
     # Inject real QRadar offenses + false positives into the executive /
     # incident-management payloads so the deck reflects live offense data.
     if qradar.get("data_status") == "live":

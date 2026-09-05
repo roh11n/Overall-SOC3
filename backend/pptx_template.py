@@ -16,6 +16,8 @@ from datetime import datetime, timezone
 from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 from pptx.dml.color import RGBColor
+from pptx.enum.chart import XL_CHART_TYPE, XL_LEGEND_POSITION
+from pptx.util import Pt
 
 logger = logging.getLogger("mssp.pptx_template")
 
@@ -186,6 +188,16 @@ def build_from_template(tenant, period, all_data, recs):
     offenses_s = _num(qsum.get("total_offenses"))
     fp_count_s = _num(qsum.get("false_positives"))
 
+    # Log-source inventory (real, from the Log Sources upload).
+    logsrc = all_data.get("logsources") or {}
+    lsum = logsrc.get("summary", {}) if logsrc.get("data_status") == "live" else {}
+    ls_integrated = _num(lsum.get("total_log_sources"))          # integrated into SOC
+    ls_enabled = _num(lsum.get("total_enabled_log_sources"))
+    ls_added = _num(lsum.get("log_sources_added"))               # newly added (recent)
+    # Fall back to the XSOAR-derived unique log sources when no inventory upload.
+    int_src = ls_integrated if lsum else uniq_src
+    added_src = ls_added if lsum else "N/A"
+
     # ---- global rebrand + period on all kept slides ----
     tok = {
         "COROMANDEL INTERNATIONAL LIMITED": tenant_name.upper(),
@@ -207,7 +219,7 @@ def build_from_template(tenant, period, all_data, recs):
         sl = slides[4]
         for idx, val in {
             4: sla, 7: "N/A", 10: mttd_s, 13: mttr_s,
-            18: "N/A", 21: adv, 24: ioc, 27: uniq_src, 30: uniq_det,
+            18: added_src, 21: adv, 24: ioc, 27: int_src, 30: uniq_det,
             34: "N/A", 36: "N/A", 38: "N/A", 40: "N/A",
             44: offenses_s, 46: total_s, 52: fp,
         }.items():
@@ -224,9 +236,9 @@ def build_from_template(tenant, period, all_data, recs):
         )
         _set_idx(sl, 4, headline)
         for idx, val in {
-            22: total_s, 24: uniq_src, 26: uniq_det, 28: "N/A",
+            22: total_s, 24: int_src, 26: uniq_det, 28: "N/A",
             32: "N/A", 34: "N/A", 35: "N/A",
-            39: sla, 42: "N/A",
+            39: sla, 41: "MTTR (median)", 42: mttr_s,
         }.items():
             _set_idx(sl, idx, val)
     except Exception:
@@ -335,6 +347,53 @@ def build_from_template(tenant, period, all_data, recs):
                     _set_idx(sl, didx, "")
     except Exception:
         logger.exception("slide10 inject failed")
+
+    # ---- Slide 8 page: overlay a stacked bar of MITRE hits by tactic ----
+    # The user asked for the MITRE ATT&CK Coverage Heatmap to be shown as a
+    # stacked bar chart of hits per tactic. We overlay it on the MITRE slide.
+    try:
+        sl = slides[9]
+        hits = all_data.get("mitre_tactic_hits") or []
+        if not hits:
+            hits = [{"tactic": r["tactic"], "hits": r.get("total", 0)}
+                    for r in (qbr.get("tactic_table") or [])]
+        hits = [h for h in hits if h.get("hits")]
+        hits.sort(key=lambda h: -h["hits"])
+        hits = hits[:12]
+        if hits:
+            tbl_shape = next((sh for sh in sl.shapes if sh.has_table), None)
+            if tbl_shape is not None:
+                left, top, width, height = (tbl_shape.left, tbl_shape.top,
+                                            tbl_shape.width, tbl_shape.height)
+                tbl_shape._element.getparent().remove(tbl_shape._element)
+            else:
+                from pptx.util import Inches
+                left, top, width, height = (Inches(0.6), Inches(1.9),
+                                            Inches(12.1), Inches(5.0))
+            cd = CategoryChartData()
+            cd.categories = [h["tactic"][:20] for h in hits]
+            cd.add_series("MITRE hits", [int(h["hits"]) for h in hits])
+            gframe = sl.shapes.add_chart(XL_CHART_TYPE.COLUMN_STACKED,
+                                         left, top, width, height, cd)
+            chart = gframe.chart
+            chart.has_legend = False
+            chart.has_title = True
+            chart.chart_title.text_frame.text = "MITRE ATT&CK Hits by Tactic"
+            try:
+                chart.chart_title.text_frame.paragraphs[0].font.size = Pt(14)
+                chart.chart_title.text_frame.paragraphs[0].font.color.rgb = NAVY
+                plot = chart.plots[0]
+                plot.has_data_labels = True
+                plot.data_labels.number_format = "#,##0"
+                plot.data_labels.number_format_is_linked = False
+                plot.data_labels.font.size = Pt(9)
+                ser = chart.series[0]
+                ser.format.fill.solid()
+                ser.format.fill.fore_color.rgb = TEAL
+            except Exception:
+                logger.exception("mitre chart styling failed")
+    except Exception:
+        logger.exception("mitre stacked-bar overlay failed")
 
     # ---- keep only the two sections ----
     _keep_slides(prs, KEEP)

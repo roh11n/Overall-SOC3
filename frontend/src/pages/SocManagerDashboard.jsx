@@ -124,8 +124,9 @@ export default function SocManagerDashboard() {
           )}
           {logSrcLive && (
             <>
+              <KpiCard label="Total Log Sources" value={logSources.summary.total_log_sources.toLocaleString()} icon={Layers} testid="kpi-logsources-total" />
               <KpiCard label="Total Enabled Log Sources" value={logSources.summary.total_enabled_log_sources.toLocaleString()} icon={Database} testid="kpi-logsources-enabled" />
-              <KpiCard label="Log Sources Added" value={logSources.summary.log_sources_added.toLocaleString()} icon={PlusCircle} testid="kpi-logsources-added" />
+              <KpiCard label="Log Sources Added (30d)" value={logSources.summary.log_sources_added.toLocaleString()} icon={PlusCircle} testid="kpi-logsources-added" />
             </>
           )}
         </div>

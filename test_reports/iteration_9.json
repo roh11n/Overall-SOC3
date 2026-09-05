@@ -1,0 +1,28 @@
+{
+  "summary": "Verified iteration-9 fixes: PPTX pages 3/4 now use real log-source data (added=5, integrated=10), page 4 MTTR shows median (~11.94 h) not N/A, page 8 replaced MITRE table with 'MITRE ATT&CK Hits by Tactic' chart, and PPTX has 8 slides. SOC Manager UI renders three new log-source KPI cards (10, 8, 5) plus existing QRadar cards. Executive + IRIS regressions pass. 7/7 pytest passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_bugs_iter9.py",
+    "/app/test_reports/pytest/iter9.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": ["/app/backend/tests/test_bugs_iter9.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mssp-soc.io / Iris-df02a9d88045!Aa9",
+  "seed_data_creation": "None - reused tenant 'all' data (5516 XSOAR, 4927 QRadar, 10-row log-source sample)",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "PPTX pptx_template.build_from_template writes idx18=added_src, idx27=int_src on slide3; idx24=int_src, idx41='MTTR (median)', idx42=mttr_s on slide4; slide8 replaces heat-map table with COLUMN_STACKED chart 'MITRE ATT&CK Hits by Tactic'. SOC Manager KPIs live at /soc-manager route with testids kpi-logsources-total/enabled/added and kpi-qradar-offenses/fp.",
+  "verification_details": {
+    "PPTX_8_slides": "PASS",
+    "PPTX_page3": "PASS - contains 5 and 10 (added / integrated)",
+    "PPTX_page4": "PASS - integrated=10, MTTR (median) present with hours value",
+    "PPTX_page8_chart": "PASS - chart title 'MITRE ATT&CK Hits by Tactic' present, table removed",
+    "log_sources_summary_api": "PASS - total=10 enabled=8 added=5 added_total=10",
+    "executive_regression": "PASS - offenses>0, mttr~11.94, coverage>0",
+    "iris_chat": "PASS - source=hf-llm",
+    "frontend_soc_manager_ui": "PASS - cards render 10/8/5 and QRadar 4927/4360"
+  }
+}

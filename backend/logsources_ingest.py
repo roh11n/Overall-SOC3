@@ -33,11 +33,15 @@ def _find(cols: Dict[str, str], *candidates) -> Optional[str]:
 
 def _truthy_enabled(v) -> bool:
     if v is None or (isinstance(v, float) and pd.isna(v)):
-        return False
+        return True  # blank in an enabled column → treat as enabled
     if isinstance(v, bool):
         return v
     s = str(v).strip().lower()
-    return s in {"true", "1", "1.0", "yes", "y", "enabled", "active", "on"}
+    if not s:
+        return True
+    disabled = {"false", "0", "0.0", "no", "n", "disabled", "inactive", "off",
+                "error", "down", "stopped", "paused"}
+    return s not in disabled
 
 
 def parse_rows(contents: bytes, filename: str) -> List[Dict[str, Any]]:
@@ -62,14 +66,14 @@ def parse_rows(contents: bytes, filename: str) -> List[Dict[str, Any]]:
             nm = r.get(name_col) if name_col else None
             nm = None if (nm is None or (isinstance(nm, float) and pd.isna(nm))) else str(nm).strip()
             # If there is an explicit enabled/status column use it, else assume enabled.
-            enabled = _truthy_enabled(r.get(enabled_col)) if enabled_col else True
+            enabled = _truthy_enabled(r.get(enabled_col)) if enabled_col else None
             created = None
             if created_col is not None:
                 created = pd.to_datetime(r.get(created_col), errors="coerce", utc=True)
                 created = None if pd.isna(created) else created.isoformat()
             if not nm and enabled_col is None and created_col is None:
                 continue
-            out.append({"name": nm, "enabled": bool(enabled), "created": created})
+            out.append({"name": nm, "enabled": enabled, "created": created})
         if out:
             break
     return out
@@ -106,9 +110,10 @@ async def compute(db, tenant_id: str) -> Dict[str, Any]:
         return {"data_status": "empty", "upload": None}
 
     total = len(rows)
-    enabled = sum(1 for r in rows if r.get("enabled"))
+    # Count as enabled unless the export explicitly marked the source disabled
+    # (enabled is False). None means the file had no enabled/status column.
+    enabled = sum(1 for r in rows if r.get("enabled") is not False)
     dated = [pd.to_datetime(r["created"]) for r in rows if r.get("created")]
-    added = len(dated)
     added_recent = 0
     if dated:
         newest = max(dated)
@@ -121,7 +126,7 @@ async def compute(db, tenant_id: str) -> Dict[str, Any]:
         "summary": {
             "total_log_sources": total,
             "total_enabled_log_sources": enabled,
-            "log_sources_added": added,
-            "log_sources_added_recent": added_recent,
+            "log_sources_added": added_recent,
+            "log_sources_added_total": len(dated),
         },
     }
