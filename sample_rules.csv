@@ -1,0 +1,11 @@
+Rule Name,Rule ID,Rule Description,Applicable Log Sources,ATT&CK Tactic,ATT&CK Technique
+Phishing Triage Rule,R-001,Detects reported phishing emails,O365 Audit,Initial Access,Phishing
+Impossible Travel Rule,R-002,Detects impossible travel logins,Okta SSO,Credential Access,Brute Force
+Malware Behavior Rule,R-003,Detects malware execution behavior,Windows Security Eventlog,Execution,Command and Scripting Interpreter
+C2 Beacon Rule,R-004,Detects C2 beaconing,Palo Alto NGFW,Command and Control,Application Layer Protocol
+Recon Scan Rule,R-005,Detects reconnaissance scans,Check Point Firewall,Reconnaissance,Active Scanning
+Exfil Rule,R-006,Detects data exfiltration,Zscaler Proxy,Exfiltration,Exfiltration Over C2 Channel
+PowerShell Rule,R-007,Detects encoded PowerShell,Windows Security Eventlog,Execution,Command and Scripting Interpreter
+DNS Tunnel Rule,R-008,Detects DNS tunneling,Palo Alto NGFW,Command and Control,DNS
+SMB Rule,R-009,Detects lateral movement over SMB,Windows Security Eventlog,Lateral Movement,Remote Services
+Unused Persistence Rule,R-010,Detects registry run key persistence,Windows Security Eventlog,Persistence,Boot or Logon Autostart Execution

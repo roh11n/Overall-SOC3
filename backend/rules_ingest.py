@@ -150,10 +150,16 @@ async def compute_detection(db, tenant_id: str, xsoar_rows: List[Dict]) -> Dict[
                     trig[k] += 1
                     seen.add(k)
 
-    # --- MITRE heat-map + coverage from catalog tactics/techniques
+    # --- MITRE heat-map + coverage from catalog tactics/techniques.
+    #     Hit value for each technique = number of XSOAR incidents whose
+    #     `name` / `rule_name` matches this catalog rule (by Rule Name, Rule ID
+    #     or Rule UUID). Matched incidents are attributed to the rule's tactics
+    #     & techniques so the heat-map shows real activity, not catalog size.
     tactic_rules = Counter()
-    tactic_techs: Dict[str, Counter] = {}
+    tactic_tech_hits: Dict[str, Counter] = {}     # accumulated matched-incident hits
+    tactic_tech_present: Dict[str, set] = {}       # techniques present in catalog per tactic
     with_attack = with_logsrc = with_desc = 0
+    matched_rules = 0
     for r in rows:
         if r["tactics"]:
             with_attack += 1
@@ -161,27 +167,29 @@ async def compute_detection(db, tenant_id: str, xsoar_rows: List[Dict]) -> Dict[
             with_logsrc += 1
         if r["description"]:
             with_desc += 1
+        # incidents matching this rule (name against XSOAR name/rule_name)
+        keys = {_norm_key(v) for v in (r["rule_name"], r.get("rule_id"), r.get("rule_uuid")) if v}
+        hits_r = max((trig.get(k, 0) for k in keys), default=0)
+        if hits_r > 0:
+            matched_rules += 1
         for t in set(r["tactics"]):
             tactic_rules[t] += 1
-            tc = tactic_techs.setdefault(t, Counter())
-            for tech in r["techniques"]:
-                tc[tech] += 1
+            th = tactic_tech_hits.setdefault(t, Counter())
+            pres = tactic_tech_present.setdefault(t, set())
+            for tech in (r["techniques"] or ["Unspecified technique"]):
+                th[tech] += hits_r
+                pres.add(tech)
 
     max_rules = max(tactic_rules.values()) if tactic_rules else 1
-
-    # Live technique activity from XSOAR incidents → dynamic heat-map hit counts
-    # (previously "hits" was a static count of catalog rules per technique).
-    live_tech_hits = Counter()
-    for x in xsoar_rows or []:
-        tech = x.get("mitre_technique")
-        if tech:
-            live_tech_hits[_norm_key(_tech_name(tech))] += 1
 
     heatmap = []
     for t in MITRE_TACTICS:
         if t in tactic_rules:
-            techs = [{"name": n, "covered": True, "hits": live_tech_hits.get(_norm_key(n), 0)}
-                     for n, _ in tactic_techs.get(t, Counter()).most_common(8)]
+            th = tactic_tech_hits.get(t, Counter())
+            # rank techniques by matched-incident hits, then name; keep top 8
+            names = sorted(tactic_tech_present.get(t, set()),
+                           key=lambda n: (-th.get(n, 0), n))[:8]
+            techs = [{"name": n, "covered": True, "hits": th.get(n, 0)} for n in names]
             heatmap.append({"tactic": t, "coverage": round(100.0 * tactic_rules[t] / max_rules),
                             "techniques": techs})
     distinct_tactics = sum(1 for t in MITRE_TACTICS if t in tactic_rules)
@@ -235,5 +243,6 @@ async def compute_detection(db, tenant_id: str, xsoar_rows: List[Dict]) -> Dict[
         "quality": quality,
         "techniques_covered": distinct_techs,
         "techniques_missing": 0,
+        "rules_matched": matched_rules,
         "rule_effectiveness": rule_effectiveness,
     }

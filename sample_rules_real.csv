@@ -1,0 +1,9 @@
+Rule Name,Rule ID,Rule Description,Applicable Log Sources,ATT&CK Tactic,ATT&CK Technique
+IND-UC-00317-Permit Connections CTI_IP Feeds Inbound,R-001,real rule,QRadar,Initial Access,Phishing
+IND-UC-00150-USB Access Detected,R-002,real rule,QRadar,Execution,Command and Scripting Interpreter
+IND-GLUC-10073-Password Change Outside Business Hours,R-003,real rule,QRadar,Credential Access,Brute Force
+IND-UC-0371-Suspicious LSASS Memory Access,R-004,real rule,QRadar,Command and Control,Application Layer Protocol
+IND-UC-00513-Suspicious Campaign Traffic Detected,R-005,real rule,QRadar,Lateral Movement,Remote Services
+IND-UC-00345-Excessive Firewall Denies from Single Remote Source,R-006,real rule,QRadar,Exfiltration,Exfiltration Over C2 Channel
+IND-UC-00487-Credential Spray,R-007,real rule,QRadar,Persistence,Boot or Logon Autostart Execution
+IND-UC-00603-VIP Account Lockout,R-008,real rule,QRadar,Discovery,Account Discovery

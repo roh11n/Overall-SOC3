@@ -435,6 +435,7 @@ async def dashboard_det(period: str = "monthly", tenant_id: str = "all", user=De
         det["gap_analysis"]["techniques_covered"] = rules_res["techniques_covered"]
         det["gap_analysis"]["techniques_missing"] = rules_res["techniques_missing"]
         det["rule_effectiveness"] = rules_res["rule_effectiveness"]
+        det["rules_matched"] = rules_res.get("rules_matched")
         det["rules_upload"] = rules_res.get("upload")
     elif has_overlay:
         # Fall back to XSOAR-derived heat-map + FP rule table
