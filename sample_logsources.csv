@@ -1,0 +1,11 @@
+Log Source Name,Enabled,Creation Date
+Check Point Firewall,true,2026-05-20
+Windows Security Eventlog,true,2026-05-22
+Palo Alto NGFW,true,2026-04-15
+Linux Auth,false,2026-03-10
+AWS CloudTrail,true,2026-05-25
+Cisco ASA,true,2026-02-01
+O365 Audit,true,2026-05-28
+Legacy Syslog,false,2025-12-01
+Okta SSO,true,2026-05-29
+Zscaler Proxy,true,2026-01-11

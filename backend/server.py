@@ -41,6 +41,8 @@ import recommendations
 import tenants as tenants_mod
 import ti_ingest
 import xsoar_ingest
+import qradar_ingest
+import logsources_ingest
 import rules_ingest
 import logval_ingest
 import scheduler as report_scheduler
@@ -417,11 +419,14 @@ async def dashboard_det(period: str = "monthly", tenant_id: str = "all", user=De
     has_rules = rules_res.get("data_status") == "live"
     has_overlay = overlay.get("data_status") == "live" and overlay.get("mitre_heatmap")
     has_logval = logval.get("data_status") == "live"
-    if not (has_rules or has_overlay or has_logval):
+    finetuning = xsoar_ingest.compute_finetuning(xsoar_rows)
+    has_finetuning = finetuning.get("count", 0) > 0
+    if not (has_rules or has_overlay or has_logval or has_finetuning):
         return {"data_status": "empty", "period": p}
 
     det = tenants_mod.detection_engineering(p, await get_tenant(tenant_id))
     det["data_status"] = "live"
+    det["finetuning"] = finetuning
 
     if has_rules:
         # Rule catalog drives MITRE coverage + rule effectiveness
@@ -485,6 +490,28 @@ async def dashboard_soar(period: str = "monthly", tenant_id: str = "all", user=D
     return await xsoar_ingest.compute_soar(db, tenant_id=tenant_id)
 
 
+@api.get("/dashboard/qradar")
+async def dashboard_qradar(tenant_id: str = "all", user=Depends(current_user_dep)):
+    return await qradar_ingest.compute(db, tenant_id)
+
+
+@api.delete("/dashboard/qradar/data")
+async def dashboard_qradar_clear(tenant_id: str = "all", user=Depends(current_user_dep)):
+    await qradar_ingest.delete_data(db, tenant_id)
+    return {"cleared": True, "tenant_id": tenant_id}
+
+
+@api.get("/dashboard/log-sources")
+async def dashboard_log_sources(tenant_id: str = "all", user=Depends(current_user_dep)):
+    return await logsources_ingest.compute(db, tenant_id)
+
+
+@api.delete("/dashboard/log-sources/data")
+async def dashboard_log_sources_clear(tenant_id: str = "all", user=Depends(current_user_dep)):
+    await logsources_ingest.delete_data(db, tenant_id)
+    return {"cleared": True, "tenant_id": tenant_id}
+
+
 # ---------- AI / LLM ----------
 @api.get("/ai/status")
 async def ai_status(user=Depends(current_user_dep)):
@@ -505,7 +532,7 @@ async def ai_insights(period: str = "monthly", tenant_id: str = "all", user=Depe
 # ---------- Uploads ----------
 @api.post("/upload/data")
 async def upload_data(source: str, tenant_id: str = "all", file: UploadFile = File(...), user=Depends(current_user_dep)):
-    if source not in {"qradar", "xsoar", "threat_intel", "rules", "log_validation"}:
+    if source not in {"qradar", "xsoar", "threat_intel", "rules", "log_validation", "log_sources"}:
         raise HTTPException(status_code=400, detail="Invalid source")
     contents = await file.read()
     name = (file.filename or "").lower()
@@ -591,6 +618,30 @@ async def upload_data(source: str, tenant_id: str = "all", file: UploadFile = Fi
             logger.exception("log_validation row persistence failed")
             record["logval_ingest_error"] = str(e)[:200]
 
+    # QRadar offenses → SOC Manager / Executive offense KPIs + FP from
+    # localizedCloseReason (drives the PPTX incident-management slide).
+    if source == "qradar":
+        try:
+            rows = qradar_ingest.parse_rows(contents, file.filename or "")
+            await qradar_ingest.save_upload(
+                db, tenant_id=tenant_id, uploaded_by=user.get("email") or "",
+                filename=file.filename or "upload", rows=rows,
+            )
+            record["qradar_row_count"] = len(rows)
+        except Exception as e:
+            logger.exception("qradar row persistence failed")
+            record["qradar_ingest_error"] = str(e)[:200]
+
+    # Log-source inventory → SOC Manager log-source KPIs
+    if source == "log_sources":
+        try:
+            rows = logsources_ingest.parse_rows(contents, file.filename or "")
+            await logsources_ingest.save_upload(db, tenant_id, file.filename or "upload", rows)
+            record["logsources_row_count"] = len(rows)
+        except Exception as e:
+            logger.exception("log_sources row persistence failed")
+            record["logsources_ingest_error"] = str(e)[:200]
+
     # Surface what actually landed in a dashboard so the UI can give honest feedback.
     if source == "threat_intel":
         record["bound_rows"] = record.get("ti_row_count", 0)
@@ -604,24 +655,24 @@ async def upload_data(source: str, tenant_id: str = "all", file: UploadFile = Fi
     elif source == "log_validation":
         record["bound_rows"] = record.get("logval_row_count", 0)
         record["dashboard"] = "Detection Engineering (Log Priority)"
+    elif source == "log_sources":
+        record["bound_rows"] = record.get("logsources_row_count", 0)
+        record["dashboard"] = "SOC Manager (Log Source KPIs)"
     else:  # qradar
-        record["bound_rows"] = 0
-        record["dashboard"] = None
-        record["warning"] = (
-            "QRadar files are stored but do not populate dashboards yet. "
-            "Upload an XSOAR or Threat Intel export to see live data."
-        )
+        record["bound_rows"] = record.get("qradar_row_count", 0)
+        record["dashboard"] = "SOC Manager / Executive (QRadar Offenses + False Positives)"
     # If parsing raised, surface a concrete reason instead of a silent 0 rows.
     _ingest_err = next((record.get(k) for k in (
-        "xsoar_ingest_error", "ti_ingest_error",
-        "rules_ingest_error", "logval_ingest_error") if record.get(k)), None)
-    if source in {"xsoar", "threat_intel", "rules", "log_validation"} and record["bound_rows"] == 0 and _ingest_err:
+        "xsoar_ingest_error", "ti_ingest_error", "rules_ingest_error",
+        "logval_ingest_error", "qradar_ingest_error", "logsources_ingest_error") if record.get(k)), None)
+    _live_sources = {"xsoar", "threat_intel", "rules", "log_validation", "qradar", "log_sources"}
+    if source in _live_sources and record["bound_rows"] == 0 and _ingest_err:
         record["error"] = f"Could not read this file: {_ingest_err}"
         record["warning"] = (
             "The file could not be parsed, so nothing was added to the dashboard. "
             "Please check the file format and try again."
         )
-    elif source in {"xsoar", "threat_intel", "rules", "log_validation"} and record["bound_rows"] == 0:
+    elif source in _live_sources and record["bound_rows"] == 0:
         record["warning"] = (
             "0 rows matched the expected columns — nothing was added to the dashboard. "
             "Check that your file's column headers match the expected format."

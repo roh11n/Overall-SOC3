@@ -36,7 +36,11 @@ _CANONICAL_COLS = {
     "detected": "detected", "detected date": "detected",
     "detection date": "detected", "detection time": "detected",
     "final severity": "final_severity", "initial severity": "initial_severity",
-    "close reason": "close_reason", "closenotes": "close_notes",
+    "close reason": "close_reason", "closedreason": "close_reason",
+    "closed reason": "close_reason",
+    "closenotes": "close_notes", "closednotes": "close_notes",
+    "closed notes": "close_notes", "close notes": "close_notes",
+    "closing notes": "close_notes",
     "actual time taken": "time_taken_sec",
     "ticket number": "ticket_number", "ticket opened date": "ticket_opened",
     "ticket acknowledged date": "ticket_acknowledged",
@@ -44,8 +48,12 @@ _CANONICAL_COLS = {
     "ticket closed date": "ticket_closed",
     "tenant name": "tenant_name", "log source": "log_source",
     "rule name": "rule_name",
-    "mitre tactic name": "mitre_tactic",
-    "mitre technique name": "mitre_technique",
+    "mitre tactic name": "mitre_tactic", "mitre tactic": "mitre_tactic",
+    "mitre attack tactic": "mitre_tactic", "attack tactic": "mitre_tactic",
+    "tactic": "mitre_tactic", "tactics": "mitre_tactic",
+    "mitre technique name": "mitre_technique", "mitre technique": "mitre_technique",
+    "mitre attack technique": "mitre_technique", "attack technique": "mitre_technique",
+    "technique": "mitre_technique", "techniques": "mitre_technique",
     "sla breached": "sla_breached",
     "time to acknowledge": "time_to_ack",
     "time to assignment": "time_to_assign",
@@ -174,6 +182,7 @@ def parse_rows(contents: bytes, filename: str) -> List[Dict[str, Any]]:
             "occurred": occurred_iso,
             "closed": closed_iso,
             "close_reason": _clean(r.get("close_reason")),
+            "close_notes": _clean(r.get("close_notes")),
             "time_taken_sec": _to_seconds(r.get("time_taken_sec")),
             "open_duration_sec": _to_seconds(r.get("open_duration_sec")),
             "mttr_sec": mttr_sec,
@@ -288,6 +297,49 @@ def _is_tp(reason) -> bool:
     return r in {"tp"} or any(t in r for t in _TP_TOKENS)
 
 
+# "Other" close-reason + notes classification (client-specific rules).
+_FP_NOTE_TOKENS = ("false positive", "false-positive", "non-issue", "non issue",
+                   "nonissue", "merged offense", "merged offence")
+_FINETUNE_NOTE_TOKENS = ("finetuning", "fine tuning", "fine-tuning", "tuned", "tuning")
+
+
+def _reason_is_other(reason) -> bool:
+    return (reason or "").strip().lower() == "other"
+
+
+def _is_fp_row(r: dict) -> bool:
+    """True positive/false-positive classification for a row: standard close
+    reason FP, OR close reason 'Other' with notes flagging a false positive /
+    non-issue / merged offense."""
+    if _is_fp(r.get("close_reason")):
+        return True
+    if _reason_is_other(r.get("close_reason")):
+        note = (r.get("close_notes") or "").strip().lower()
+        return any(t in note for t in _FP_NOTE_TOKENS)
+    return False
+
+
+def _needs_finetuning(r: dict) -> bool:
+    """Close reason 'Other' with notes indicating the rule needs fine-tuning."""
+    if not _reason_is_other(r.get("close_reason")):
+        return False
+    note = (r.get("close_notes") or "").strip().lower()
+    return any(t in note for t in _FINETUNE_NOTE_TOKENS)
+
+
+def compute_finetuning(rows: List[dict]) -> Dict[str, Any]:
+    """Detection Engineering 'Finetuning Required' KPI derived from XSOAR rows
+    where close reason is 'Other' and the notes mention finetuning/tuned."""
+    flagged = [r for r in (rows or []) if _needs_finetuning(r)]
+    alerts: Counter = Counter(
+        (r.get("rule_name") or r.get("name") or "Unnamed alert") for r in flagged
+    )
+    return {
+        "count": len(flagged),
+        "alerts": [{"alert": (k or "")[:90], "count": v} for k, v in alerts.most_common(25)],
+    }
+
+
 def _time_bins(dates: List[str], bucket: str = "day") -> List[Tuple[str, int]]:
     """Return list of (label, count) sorted by label."""
     c: Counter = Counter()
@@ -319,7 +371,7 @@ async def compute_soc_manager(db, tenant_id: str) -> Dict[str, Any]:
     total = len(rows)
     closed = [r for r in rows if r.get("status") and r["status"].lower() == "closed"]
     open_now = total - len(closed)
-    fp = sum(1 for r in rows if _is_fp(r.get("close_reason")))
+    fp = sum(1 for r in rows if _is_fp_row(r))
     tp = sum(1 for r in rows if _is_tp(r.get("close_reason")))
     sla_breached = sum(1 for r in rows if r.get("sla_breached") is True)
 
@@ -347,8 +399,14 @@ async def compute_soc_manager(db, tenant_id: str) -> Dict[str, Any]:
         if sev_c.get(k, 0) > 0
     ]
 
-    # Close reason mix
-    cr_c: Counter = Counter((r.get("close_reason") or "Unresolved") for r in closed)
+    # Close reason mix — reclassify "Other" rows whose notes flag a false
+    # positive / non-issue / merged offense into a single "False Positive"
+    # bucket so the Resolution Mix reflects the client's tuning rules.
+    def _reason_label(r):
+        if _reason_is_other(r.get("close_reason")) and _is_fp_row(r):
+            return "False Positive"
+        return r.get("close_reason") or "Unresolved"
+    cr_c: Counter = Counter(_reason_label(r) for r in closed)
     close_reason_mix = [{"reason": k, "count": v} for k, v in cr_c.most_common()]
 
     # Top rules
@@ -362,7 +420,7 @@ async def compute_soc_manager(db, tenant_id: str) -> Dict[str, Any]:
         if not rn: continue
         s = rule_fp_stats.setdefault(rn, {"total": 0, "fp": 0})
         s["total"] += 1
-        if _is_fp(r.get("close_reason")):
+        if _is_fp_row(r):
             s["fp"] += 1
     noisy_rules = sorted(
         [{"rule": k[:80], "total": v["total"], "fp": v["fp"], "fp_pct": _pct(v["fp"], v["total"])}
@@ -530,7 +588,7 @@ async def compute_executive_rollup(db, tenant_id: str) -> Dict[str, Any]:
 
     total = len(rows)
     closed = [r for r in rows if (r.get("status") or "").lower() == "closed"]
-    fp = sum(1 for r in rows if _is_fp(r.get("close_reason")))
+    fp = sum(1 for r in rows if _is_fp_row(r))
     sla_breached = sum(1 for r in rows if r.get("sla_breached") is True)
     auto_closed = sum(1 for r in rows if r.get("auto_close") is True)
 
@@ -595,13 +653,24 @@ async def compute_detection_overlay(db, tenant_id: str) -> Dict[str, Any]:
         return {"data_status": "empty"}
 
     # ---- Heat-map: tactic -> technique -> hit count ----
+    # A single incident may carry several ';'- or ','-separated tactics /
+    # techniques (common in real XSOAR exports) — count each one.
+    def _multi(val):
+        if not val:
+            return []
+        return [p.strip() for p in re.split(r"[;,|]", str(val)) if p.strip()]
+
     tactic_map: Dict[str, Counter] = {}
+    all_techs = set()
     for r in rows:
-        tac = r.get("mitre_tactic")
-        if not tac:
+        tacs = _multi(r.get("mitre_tactic"))
+        if not tacs:
             continue
-        tech = r.get("mitre_technique") or "Unspecified technique"
-        tactic_map.setdefault(tac, Counter())[tech] += 1
+        techs = _multi(r.get("mitre_technique")) or ["Unspecified technique"]
+        for tac in tacs:
+            for tech in techs:
+                tactic_map.setdefault(tac, Counter())[tech] += 1
+                all_techs.add(tech)
 
     mitre_heatmap: List[Dict[str, Any]] = []
     if tactic_map:
@@ -618,7 +687,7 @@ async def compute_detection_overlay(db, tenant_id: str) -> Dict[str, Any]:
                 "techniques": techniques,
             })
 
-    distinct_techniques = len({r.get("mitre_technique") for r in rows if r.get("mitre_technique")})
+    distinct_techniques = len(all_techs)
     distinct_tactics = len(tactic_map)
 
     # ---- Rule effectiveness from rule_name + close_reason ----
@@ -630,7 +699,7 @@ async def compute_detection_overlay(db, tenant_id: str) -> Dict[str, Any]:
         s = rule_stats.setdefault(rn, {"total": 0, "fp": 0, "tp": 0})
         s["total"] += 1
         cr = r.get("close_reason")
-        if _is_fp(cr):
+        if _is_fp_row(r):
             s["fp"] += 1
         elif _is_tp(cr):
             s["tp"] += 1
@@ -681,7 +750,7 @@ async def compute_client(db, tenant_id: str) -> Dict[str, Any]:
 
     total = len(rows)
     closed = [r for r in rows if (r.get("status") or "").lower() == "closed"]
-    fp = sum(1 for r in rows if _is_fp(r.get("close_reason")))
+    fp = sum(1 for r in rows if _is_fp_row(r))
     sla_breached = sum(1 for r in rows if r.get("sla_breached") is True)
     major = sum(1 for r in rows if _severity_norm(r.get("severity")) in ("Critical", "High"))
     open_critical = sum(1 for r in rows if (r.get("status") or "").lower() != "closed"
@@ -714,7 +783,7 @@ async def compute_client(db, tenant_id: str) -> Dict[str, Any]:
             s["ok"] += 1
         if r.get("auto_close") is True:
             s["auto"] += 1
-        if _is_fp(r.get("close_reason")):
+        if _is_fp_row(r):
             s["fp"] += 1
     days = sorted(by_day.keys())[-30:]
     sla_trend = [{"date": d, "value": _pct(by_day[d]["ok"], by_day[d]["total"])} for d in days]

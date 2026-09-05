@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Crosshair, GitBranch, Target, TrendingDown, Upload } from "lucide-react";
+import { Crosshair, GitBranch, Target, TrendingDown, Upload, Wrench } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import ChartCard from "@/components/ChartCard";
 import TimeTabs from "@/components/TimeTabs";
@@ -108,6 +108,38 @@ export default function DetectionEngineeringDashboard() {
             <KpiCard label="ATLAS Coverage" value={data.quality.atlas_coverage ?? "N/A"} suffix={data.quality.atlas_coverage == null ? "" : "%"} testid="kpi-atlas" />
             <KpiCard label="Quality Score" value={data.quality.quality_score} testid="kpi-quality-score" />
           </div>
+
+          {data.finetuning?.count > 0 && (
+            <ChartCard
+              title="Finetuning Required"
+              subtitle="XSOAR incidents closed as 'Other' with notes flagging finetuning / tuned"
+              testid="chart-finetuning"
+              action={<Wrench className="h-4 w-4 text-muted-foreground" />}
+            >
+              <div className="flex items-center gap-6 mb-4">
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-5 py-3" data-testid="kpi-finetuning-required">
+                  <div className="text-3xl font-bold tabular text-amber-500">{data.finetuning.count}</div>
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Alerts needing finetuning</div>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Finetuning Alert Name</TableHead>
+                    <TableHead className="text-right">Occurrences</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.finetuning.alerts.map((a, i) => (
+                    <TableRow key={i} data-testid={`finetuning-row-${i}`}>
+                      <TableCell className="font-medium max-w-[420px] truncate" title={a.alert}>{a.alert}</TableCell>
+                      <TableCell className="text-right tabular">{a.count}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ChartCard>
+          )}
 
           <ChartCard
             title="MITRE ATT&CK Coverage Heatmap"

@@ -1,0 +1,25 @@
+{
+  "summary": "Independently verified all requested features via API (curl) + UI (Playwright). Backend endpoints return expected values: detection-engineering mitre_coverage=92.9 with 13 tactic heatmap columns and finetuning.count=3 listing PowerShell/Recon Scan/C2 Beacon rules; soc-manager close_reason_mix has False Positive=4 and summary.false_positive_rate=40.0; qradar summary total_offenses=10, false_positives=6; log-sources total_enabled_log_sources=8 and log_sources_added=10; PPTX export returns HTTP 200 (~25MB). IRIS chat returns source=hf-llm, model=qwen2.5:1.5b with a real MITRE answer (correct payload key is 'message'). UI: SOC Manager shows KPI cards kpi-qradar-offenses(10), kpi-qradar-fp(6), kpi-logsources-enabled(8), kpi-logsources-added(10); Detection Engineering renders Finetuning Required card (kpi-finetuning-required=3 with alerts table) and MITRE ATT&CK Coverage Heatmap with non-zero tactic percentages (Persistence 100%, Impact 35% etc.). Upload modal exposes 'Log Sources (Inventory + Enabled)' option.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Detection Engineering", "issues": ["Recharts warning: 'width(-1)/height(-1) of chart should be greater than 0' logged repeatedly for some ResponsiveContainer charts (Detection Trends area appears empty). Non-blocking but should be investigated."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py"],
+  "action_items": [
+    "Optional: fix Recharts ResponsiveContainer width=-1 warnings on Detection Engineering (Detection Trends chart empty container)."
+  ],
+  "critical_code_review_comments": [
+    "kpi-mitre-coverage data-testid not present on Detection Engineering (MITRE Coverage KPI 92.9 is rendered but the container lacks the testid). Consider adding for testability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mssp-soc.io / Iris-df02a9d88045!Aa9",
+  "seed_data_creation": "None - existing seeded data for tenant 'all' used.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All iteration-7 features (MITRE heatmap fix, Finetuning Required, FP-by-notes reclassification, QRadar ingest, Log Sources ingest, PPTX) pass API + UI. Chat endpoint requires body key 'message' not 'messages'. Recharts width=-1 warnings appear frequently in console; harmless but noisy."
+}

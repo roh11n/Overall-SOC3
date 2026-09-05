@@ -1,0 +1,11 @@
+id,name,severity,status,owner,playbookId,occurred,closed,closedreason,closednotes,Rule Name,MITRE Tactic Name,MITRE Technique Name,Auto Close,SLA Breached
+2001,Phishing email reported,High,Closed,analyst1,pb-phish,2026-05-01T08:00:00Z,2026-05-01T09:30:00Z,Other,Confirmed False Positive after review,Phishing Triage Rule,Initial Access,Phishing,False,False
+2002,Suspicious login,Medium,Closed,analyst2,pb-auth,2026-05-02T10:00:00Z,2026-05-02T13:00:00Z,Other,Marked as non-issue by analyst,Impossible Travel Rule,Credential Access,Brute Force,False,False
+2003,Malware detected,Critical,Closed,analyst1,pb-mal,2026-05-03T11:00:00Z,2026-05-04T02:00:00Z,True Positive,Ransomware confirmed,Malware Behavior Rule,Execution,Command and Scripting Interpreter,False,True
+2004,Duplicate offense,High,Closed,analyst3,pb-auth,2026-05-04T09:00:00Z,2026-05-04T10:15:00Z,Other,merged offense with 2003,Impossible Travel Rule,Credential Access,Brute Force,False,False
+2005,Beaconing detected,High,Closed,analyst2,pb-c2,2026-05-05T14:00:00Z,2026-05-05T18:00:00Z,Other,Rule needs finetuning to reduce noise,C2 Beacon Rule,Command and Control,Application Layer Protocol,False,False
+2006,Port scan,Low,Closed,analyst3,pb-recon,2026-05-06T07:00:00Z,2026-05-06T08:00:00Z,Other,tuned threshold applied,Recon Scan Rule,Reconnaissance,Active Scanning,False,False
+2007,Data exfil alert,Critical,Closed,analyst1,pb-exfil,2026-05-07T16:00:00Z,2026-05-07T20:00:00Z,True Positive,Exfil confirmed,Exfil Rule,Exfiltration,Exfiltration Over C2 Channel,False,False
+2008,PowerShell abuse,High,Closed,analyst2,pb-exec,2026-05-08T12:00:00Z,2026-05-08T13:30:00Z,Other,finetuning required for encoded command detection,PowerShell Rule,Execution,Command and Scripting Interpreter,False,False
+2009,Suspicious DNS,Medium,Closed,analyst3,pb-dns,2026-05-09T10:00:00Z,2026-05-09T11:00:00Z,Other,Confirmed false-positive,DNS Tunnel Rule,Command and Control,DNS,False,False
+2010,Lateral movement,High,Closed,analyst1,pb-lat,2026-05-10T09:00:00Z,2026-05-10T12:00:00Z,True Positive,Confirmed lateral movement,SMB Rule,Lateral Movement,Remote Services,False,False

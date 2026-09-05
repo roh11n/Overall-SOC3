@@ -1,0 +1,11 @@
+id,magnitude,severity,severityFormatted,offenseSource,localizedCloseReason,formattedCreatedTime,eventCount,domainName
+5001,7,4,High,10.1.1.5,False-Positive,2026-05-01 08:00:00,120,acme.local
+5002,5,3,Medium,10.1.1.6,Policy Violation,2026-05-01 09:00:00,45,acme.local
+5003,8,5,Critical,10.1.1.7,False-Positive,2026-05-02 10:00:00,300,acme.local
+5004,6,4,High,10.1.1.8,True-Positive,2026-05-02 11:00:00,80,acme.local
+5005,4,2,Low,10.1.1.9,False-Positive,2026-05-03 12:00:00,20,acme.local
+5006,9,5,Critical,10.1.1.10,,2026-05-03 13:00:00,500,acme.local
+5007,5,3,Medium,10.1.1.11,False-Positive,2026-05-04 14:00:00,33,acme.local
+5008,6,4,High,10.1.1.12,Confirmed Incident,2026-05-04 15:00:00,90,acme.local
+5009,7,4,High,10.1.1.5,False-Positive,2026-05-05 16:00:00,110,acme.local
+5010,3,2,Low,10.1.1.13,False-Positive,2026-05-05 17:00:00,12,acme.local

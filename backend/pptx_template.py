@@ -180,6 +180,12 @@ def build_from_template(tenant, period, all_data, recs):
     adv = _num(tsum.get("total_advisories") if ti_live else None)
     ioc = _num(tsum.get("total_iocs") if ti_live else None)
 
+    # QRadar offenses + false positives (from localizedCloseReason).
+    qradar = all_data.get("qradar") or {}
+    qsum = qradar.get("summary", {}) if qradar.get("data_status") == "live" else {}
+    offenses_s = _num(qsum.get("total_offenses"))
+    fp_count_s = _num(qsum.get("false_positives"))
+
     # ---- global rebrand + period on all kept slides ----
     tok = {
         "COROMANDEL INTERNATIONAL LIMITED": tenant_name.upper(),
@@ -203,7 +209,7 @@ def build_from_template(tenant, period, all_data, recs):
             4: sla, 7: "N/A", 10: mttd_s, 13: mttr_s,
             18: "N/A", 21: adv, 24: ioc, 27: uniq_src, 30: uniq_det,
             34: "N/A", 36: "N/A", 38: "N/A", 40: "N/A",
-            44: "N/A", 46: total_s, 52: fp,
+            44: offenses_s, 46: total_s, 52: fp,
         }.items():
             _set_idx(sl, idx, val)
     except Exception:

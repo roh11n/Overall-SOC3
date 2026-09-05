@@ -1488,7 +1488,7 @@ def _qbr_title(slide, title, subtitle):
     _hr(slide, MARGIN_L, 1.75, CONTENT_W, color=D_TEAL, thickness=1.5)
 
 
-def _qbr_exec_overview(prs, brand, ex, soc, ti):
+def _qbr_exec_overview(prs, brand, ex, soc, ti, qradar=None):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     bg = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, SLIDE_W, SLIDE_H)
     _fill(bg, D_BG); _no_line(bg)
@@ -1497,6 +1497,7 @@ def _qbr_exec_overview(prs, brand, ex, soc, ti):
     s = (soc or {}).get("summary", {}) if soc else {}
     ex = ex or {}
     ti = ti or {}
+    qs = (qradar or {}).get("summary", {}) if (qradar or {}).get("data_status") == "live" else {}
     tid_ok = ti.get("data_status") == "live"
     col_w = (CONTENT_W - 0.75) / 4
 
@@ -1515,9 +1516,9 @@ def _qbr_exec_overview(prs, brand, ex, soc, ti):
     _qbr_group(slide, MARGIN_L, 3.65, CONTENT_W, "Quarterly Signal")
     row([
         (_vs(s.get("total_incidents", ex.get("incidents"))), "incidents handled (XSOAR)"),
-        (_vs(None), "offenses (QRadar)"),
+        (_vs(qs.get("total_offenses")), "offenses (QRadar)"),
+        (_vs(qs.get("false_positives")), "false positives (QRadar)"),
         (_vs(s.get("false_positive_rate", ex.get("false_positive_rate")), pct=True), "false-positive rate"),
-        (_vs(s.get("true_positive_rate"), pct=True), "true-positive rate"),
     ], 4.05)
 
     _qbr_group(slide, MARGIN_L, 5.35, CONTENT_W, "Coverage & Detection")
@@ -1770,12 +1771,13 @@ def build_pptx(tenant: dict, period: str, all_data: dict,
     ti = all_data.get("ti_live")
     qbr = all_data.get("qbr", {})
     rules_count = all_data.get("rules_count")
+    qradar = all_data.get("qradar", {})
 
     _qbr_cover(prs, brand)
     _qbr_section(prs, brand, "01", "Executive Summary",
                  "Quarterly performance, service reliability, and detection outcomes.",
                  "SERVICE RELIABILITY   •   SIGNAL   •   COVERAGE & DETECTION", 1, 2)
-    _qbr_exec_overview(prs, brand, ex, soc, ti)
+    _qbr_exec_overview(prs, brand, ex, soc, ti, qradar)
     _qbr_exec_performance(prs, brand, ex, soc, rules_count, qbr)
     _qbr_section(prs, brand, "02", "Incident Monitoring",
                  "From log-source concentration to incident trends and MITRE ATT&CK.",

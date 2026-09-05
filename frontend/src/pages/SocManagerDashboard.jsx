@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
   ShieldAlert, Timer, Zap, Users2, UploadCloud, Trash2, Sparkles,
-  AlertOctagon, CheckCircle2, XCircle, Layers,
+  AlertOctagon, CheckCircle2, XCircle, Layers, Radar, Database, PlusCircle,
 } from "lucide-react";
 import KpiCard from "@/components/KpiCard";
 import ChartCard from "@/components/ChartCard";
@@ -54,6 +54,18 @@ export default function SocManagerDashboard() {
     queryFn: async () => (await api.get(`/dashboard/soc-manager?tenant_id=${tenantId || "all"}`)).data,
     keepPreviousData: true,
   });
+  const { data: qradar } = useQuery({
+    queryKey: ["qradar", tenantId],
+    queryFn: async () => (await api.get(`/dashboard/qradar?tenant_id=${tenantId || "all"}`)).data,
+    keepPreviousData: true,
+  });
+  const { data: logSources } = useQuery({
+    queryKey: ["log-sources", tenantId],
+    queryFn: async () => (await api.get(`/dashboard/log-sources?tenant_id=${tenantId || "all"}`)).data,
+    keepPreviousData: true,
+  });
+  const qradarLive = qradar?.data_status === "live";
+  const logSrcLive = logSources?.data_status === "live";
 
   const clearData = async () => {
     if (!window.confirm(`Delete all uploaded XSOAR data for ${tenant?.name || "this tenant"}?`)) return;
@@ -101,6 +113,23 @@ export default function SocManagerDashboard() {
           <ExportActions period="monthly" />
         </div>
       </div>
+
+      {(qradarLive || logSrcLive) && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" data-testid="qradar-logsource-kpis">
+          {qradarLive && (
+            <>
+              <KpiCard label="QRadar Offenses" value={qradar.summary.total_offenses.toLocaleString()} icon={Radar} testid="kpi-qradar-offenses" />
+              <KpiCard label="QRadar False Positives" value={qradar.summary.false_positives.toLocaleString()} icon={XCircle} intent="negative" testid="kpi-qradar-fp" />
+            </>
+          )}
+          {logSrcLive && (
+            <>
+              <KpiCard label="Total Enabled Log Sources" value={logSources.summary.total_enabled_log_sources.toLocaleString()} icon={Database} testid="kpi-logsources-enabled" />
+              <KpiCard label="Log Sources Added" value={logSources.summary.log_sources_added.toLocaleString()} icon={PlusCircle} testid="kpi-logsources-added" />
+            </>
+          )}
+        </div>
+      )}
 
       {isLoading && !data && <div className="text-sm text-muted-foreground">Loading…</div>}
       {data && data.data_status === "empty" && (

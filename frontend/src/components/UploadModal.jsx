@@ -41,22 +41,22 @@ export default function UploadModal({ open, onOpenChange }) {
       // Refresh every dashboard so the newly-ingested data shows immediately.
       qc.invalidateQueries();
       const tName = tenant?.name || "All Tenants";
-      if (source === "qradar") {
-        toast.warning(
-          `Stored ${data.rows} rows from ${data.filename}, but QRadar uploads don't drive dashboards yet — use XSOAR or Threat Intel.`
-        );
-      } else {
+      {
         const boundMap = {
           threat_intel: data.ti_row_count ?? 0,
           xsoar: data.xsoar_row_count ?? 0,
           rules: data.rules_row_count ?? 0,
           log_validation: data.logval_row_count ?? 0,
+          qradar: data.qradar_row_count ?? 0,
+          log_sources: data.logsources_row_count ?? 0,
         };
         const labelMap = {
           threat_intel: "Threat Intelligence",
           xsoar: "SOC / Detection / Executive",
           rules: "Detection Engineering (MITRE + Rule Effectiveness)",
           log_validation: "Detection Engineering (Log Priority)",
+          qradar: "SOC Manager / Executive (QRadar Offenses + False Positives)",
+          log_sources: "SOC Manager (Log Source KPIs)",
         };
         const bound = boundMap[source] ?? 0;
         if (bound > 0) {
@@ -104,6 +104,7 @@ export default function UploadModal({ open, onOpenChange }) {
                 <SelectItem value="threat_intel">Threat Intel (Advisories / CVE / IOC)</SelectItem>
                 <SelectItem value="rules">Rule Catalog (Detection Rules + ATT&CK)</SelectItem>
                 <SelectItem value="log_validation">Log Validation (Priority)</SelectItem>
+                <SelectItem value="log_sources">Log Sources (Inventory + Enabled)</SelectItem>
               </SelectContent>
             </Select>
             {source === "threat_intel" && (
@@ -127,8 +128,13 @@ export default function UploadModal({ open, onOpenChange }) {
               </div>
             )}
             {source === "qradar" && (
-              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-muted-foreground leading-relaxed" data-testid="upload-hint-qradar">
-                <span className="font-semibold text-amber-600">Heads up:</span> QRadar files are stored but don't populate dashboards yet. To see live data, upload an <span className="font-semibold text-foreground">XSOAR</span> or <span className="font-semibold text-foreground">Threat Intel</span> export.
+              <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] text-muted-foreground leading-relaxed" data-testid="upload-hint-qradar">
+                <span className="font-semibold text-foreground">Expected columns:</span> id, severity/severityFormatted, offenseSource, localizedCloseReason, formattedCreatedTime, eventCount, domainName. Drives <span className="font-semibold text-foreground">QRadar Offenses</span> &amp; <span className="font-semibold text-foreground">False Positives</span> (from <span className="font-mono">localizedCloseReason</span>) on SOC Manager + PPT for tenant <span className="font-semibold text-foreground">{tenant?.name || "All Tenants"}</span>.
+              </div>
+            )}
+            {source === "log_sources" && (
+              <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] text-muted-foreground leading-relaxed" data-testid="upload-hint-logsources">
+                <span className="font-semibold text-foreground">Expected columns:</span> Log Source Name, Enabled/Status, Creation Date. Renders <span className="font-semibold text-foreground">Total Enabled Log Sources</span> &amp; <span className="font-semibold text-foreground">Log Sources Added</span> KPIs on the SOC Manager tab.
               </div>
             )}
           </div>

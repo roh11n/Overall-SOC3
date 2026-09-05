@@ -18,6 +18,7 @@ import rules_ingest
 import tenants as tenants_mod
 import ti_ingest
 import xsoar_ingest
+import qradar_ingest
 
 logger = logging.getLogger("mssp-soc.scheduler")
 
@@ -79,6 +80,21 @@ async def build_bundle(db, period: str, tenant_id: str):
     # Live data for the QBR-style deck (Executive + Incident Monitoring).
     all_data["soc_live"] = await xsoar_ingest.compute_soc_manager(db, tenant_id)
     all_data["qbr"] = await xsoar_ingest.compute_qbr(db, tenant_id)
+    qradar = await qradar_ingest.compute(db, tenant_id)
+    all_data["qradar"] = qradar
+    # Inject real QRadar offenses + false positives into the executive /
+    # incident-management payloads so the deck reflects live offense data.
+    if qradar.get("data_status") == "live":
+        qs = qradar["summary"]
+        io = all_data["executive"].setdefault("incident_ops", {})
+        io["total_offenses"] = qs["total_offenses"]
+        io["false_positives"] = qs["false_positives"]
+        soc_io = all_data.get("soc", {})
+        try:
+            all_data["soc"]["incident_ops"]["total_offenses"] = qs["total_offenses"]
+            all_data["soc"]["incident_ops"]["false_positives"] = qs["false_positives"]
+        except Exception:
+            pass
     all_data["ti_live"] = ti if has_ti else {"data_status": "empty"}
     _rc = await rules_ingest.latest_upload(db, tenant_id)
     all_data["rules_count"] = (_rc or {}).get("row_count")
