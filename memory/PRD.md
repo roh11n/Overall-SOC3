@@ -41,3 +41,11 @@ sudo supervisorctl reread && sudo supervisorctl update && sudo supervisorctl sta
 - PPTX: QRadar offenses wired into exec-overview (template idx 44) + native fallback exec-overview shows offenses & false positives.
 - CAVEAT: exact placeholder for the client's reference "False Positive 8,086" incident-management tile could not be mapped 1:1 without the reference PPTX; needs the reference deck to pin the exact shape.
 - Test fixtures: /app/sample_xsoar_v2.csv, /app/sample_qradar.csv, /app/sample_logsources.csv (ingested for tenant 'all').
+
+## Iteration 3 (2026-06) — bug fixes
+- PPTX export 500 fixed: `compute_qbr._mk()` returned NaT for empty/invalid dates → strftime crash on real data. Now returns None for NaT.
+- Executive Overview: offenses (QRadar) + qradar_false_positives now wired into `_live_executive` and PPTX bundle (were hardcoded 0).
+- Executive MTTR now uses median (was mean → 150h inflated by idle wall-clock time); consistent with SOC Manager.
+- Executive detection coverage now reads rule-catalog MITRE coverage (falls back to XSOAR overlay); was hardcoded to overlay-only → 0.
+- Note: QRadar offenses (~4,927) and XSOAR incidents (~5,516) are separate source systems and are NOT expected to match 1:1.
+- Rule-catalog → heatmap hit mapping: catalog Rule Name matched to XSOAR incident name/rule_name; matched incident count = technique hit value.

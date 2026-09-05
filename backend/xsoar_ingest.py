@@ -592,7 +592,7 @@ async def compute_executive_rollup(db, tenant_id: str) -> Dict[str, Any]:
     sla_breached = sum(1 for r in rows if r.get("sla_breached") is True)
     auto_closed = sum(1 for r in rows if r.get("auto_close") is True)
 
-    mttr_h = round(_avg([r.get("mttr_sec") for r in rows]) / 3600.0, 2)
+    mttr_h = round(_median([r.get("mttr_sec") for r in rows]) / 3600.0, 2)
     sla_compliance = round(100.0 - _pct(sla_breached, total), 1)
     automation_rate = _pct(auto_closed, total)
 
@@ -892,7 +892,8 @@ async def compute_qbr(db, tenant_id: str) -> Dict[str, Any]:
     # Alerts by month x severity + MTTR (minutes) by month
     def _mk(occ):
         try:
-            return pd.to_datetime(occ)
+            ts = pd.to_datetime(occ)
+            return None if pd.isna(ts) else ts
         except Exception:
             return None
     month_sev: Dict[str, Counter] = {}

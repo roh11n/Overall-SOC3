@@ -1,0 +1,28 @@
+{
+  "summary": "Verified all 4 reported bug fixes (PPTX export, Executive offenses, MTTR, detection coverage) plus regressions on SOC Manager, Detection Engineering, and IRIS chat. Backend pytest: 5/5 pass. Frontend Executive Overview UI shows correct values (Offenses 4927, MTTR 11.94h, Detection Coverage 92.9%, Incidents 5516).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_bugs_iter8.py",
+    "/app/test_reports/pytest/iter8.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [],
+  "updated_files": ["/app/backend/tests/test_bugs_iter8.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mssp-soc.io / Iris-df02a9d88045!Aa9",
+  "seed_data_creation": "None - used user's real loaded data (5516 XSOAR incidents, 4927 QRadar offenses) for tenant 'all'",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Executive Overview page is at route '/' (not '/executive'). Live values verified via API: offenses=4927, qradar_false_positives=4360, mttr_hours=11.94, detection_coverage=92.9, incidents=5516. IRIS chat returns source='hf-llm'. PPTX export returns valid .pptx (PK zip magic).",
+  "verification_details": {
+    "BUG1_pptx_export": "PASS - HTTP 200, content starts with PK zip magic, size > 5KB",
+    "BUG2_offenses": "PASS - offenses=4927, qradar_false_positives=4360 (both > 0)",
+    "BUG3_mttr": "PASS - mttr_hours=11.94 (median, ~12h expected, not 150)",
+    "BUG4_detection_coverage": "PASS - detection_coverage=92.9%",
+    "regression_soc_manager": "PASS - HTTP 200, MTTR sane",
+    "regression_detection_engineering": "PASS - HTTP 200",
+    "regression_iris_chat": "PASS - source='hf-llm'",
+    "frontend_ui": "Executive Overview cards display: INCIDENTS(XSOAR)=5516, OFFENSES(QRADAR)=4927, MTTR=11.94h, DETECTION COVERAGE=92.9%"
+  }
+}

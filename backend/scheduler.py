@@ -41,6 +41,8 @@ async def build_bundle(db, period: str, tenant_id: str):
     roll = await xsoar_ingest.compute_executive_rollup(db, tenant_id)
     overlay = await xsoar_ingest.compute_detection_overlay(db, tenant_id)
     ti = await ti_ingest.compute_dashboard(db, tenant_id=tenant_id, period=period)
+    _xrows = await xsoar_ingest._rows(db, tenant_id)
+    _rules_res = await rules_ingest.compute_detection(db, tenant_id, _xrows)
     has_x = roll.get("data_status") == "live"
     has_ti = ti.get("data_status") == "live"
 
@@ -49,7 +51,12 @@ async def build_bundle(db, period: str, tenant_id: str):
         fp = roll.get("false_positive_rate") or 0
         auto = roll.get("automation_rate") or 0
         mttr = roll.get("mttr_hours") or 0
-        det_cov = overlay.get("mitre_coverage") if overlay.get("data_status") == "live" else 0
+        if _rules_res.get("data_status") == "live":
+            det_cov = _rules_res.get("quality", {}).get("mitre_coverage") or 0
+        elif overlay.get("data_status") == "live":
+            det_cov = overlay.get("mitre_coverage") or 0
+        else:
+            det_cov = 0
         ex = all_data["executive"]
         ex.update({
             "data_status": "live",

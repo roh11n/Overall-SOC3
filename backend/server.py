@@ -327,16 +327,29 @@ async def _live_executive(p: str, tenant_id: str) -> dict:
     roll = await xsoar_ingest.compute_executive_rollup(db, tenant_id)
     overlay = await xsoar_ingest.compute_detection_overlay(db, tenant_id)
     ti = await ti_ingest.compute_dashboard(db, tenant_id=tenant_id, period=p)
+    qradar = await qradar_ingest.compute(db, tenant_id)
+    xsoar_rows = await xsoar_ingest._rows(db, tenant_id)
+    rules_res = await rules_ingest.compute_detection(db, tenant_id, xsoar_rows)
     has_xsoar = roll.get("data_status") == "live"
     has_ti = ti.get("data_status") == "live"
-    if not has_xsoar and not has_ti:
+    has_qradar = qradar.get("data_status") == "live"
+    if not has_xsoar and not has_ti and not has_qradar:
         return {"data_status": "empty", "period": p}
 
     sla = roll.get("sla_compliance") or 0
     fp = roll.get("false_positive_rate") or 0
     auto = roll.get("automation_rate") or 0
     mttr = roll.get("mttr_hours") or 0
-    det_cov = overlay.get("mitre_coverage") if overlay.get("data_status") == "live" else 0
+    # Detection coverage: prefer the rule-catalog MITRE coverage, fall back to
+    # the XSOAR-derived overlay coverage.
+    if rules_res.get("data_status") == "live":
+        det_cov = rules_res.get("quality", {}).get("mitre_coverage") or 0
+    elif overlay.get("data_status") == "live":
+        det_cov = overlay.get("mitre_coverage") or 0
+    else:
+        det_cov = 0
+    offenses = qradar["summary"]["total_offenses"] if has_qradar else 0
+    qradar_fp = qradar["summary"]["false_positives"] if has_qradar else 0
     health = round(max(0.0, min(100.0, 0.5 * sla + 0.3 * auto + 0.2 * det_cov)), 1)
     risk = round(max(0.0, min(100.0, 0.5 * fp + 0.3 * (100 - sla) + 0.2 * min(100, mttr))), 1)
 
@@ -346,7 +359,8 @@ async def _live_executive(p: str, tenant_id: str) -> dict:
         "health_score": health,
         "risk_score": risk,
         "incidents": roll.get("incidents") or 0,
-        "offenses": 0,
+        "offenses": offenses,
+        "qradar_false_positives": qradar_fp,
         "sla_compliance": sla,
         "mttr_hours": mttr,
         "detection_coverage": det_cov,
