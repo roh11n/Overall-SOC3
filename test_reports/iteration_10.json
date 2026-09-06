@@ -1,0 +1,24 @@
+{
+  "summary": "Validated real log-sources CSV ingest (795 rows) and regressions. All backend endpoints return expected values, SOC Manager UI shows correct KPIs, PPTX slides 3/4/8 verified via python-pptx.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "verified": {
+    "GET /api/dashboard/log-sources?tenant_id=all": "total=795, enabled=795, added=7, added_total=794",
+    "SOC Manager KPIs (UI)": "kpi-logsources-total=795, kpi-logsources-enabled=795, kpi-logsources-added=7, kpi-qradar-offenses=4927, kpi-qradar-fp=4360, MTTR=11.94h",
+    "PPTX slide 3": "contains 7 and 795",
+    "PPTX slide 4": "contains 795 and 11.94 (MTTR)",
+    "PPTX slide 8": "MITRE ATT&CK Hits by Tactic title present",
+    "IRIS chat (/api/copilot/chat)": "returns source='hf-llm'",
+    "QRadar + Executive dashboards": "200 OK"
+  },
+  "test_report_links": ["/app/backend/tests/test_bugs_iter10.py", "/app/test_reports/pytest/iter10.xml"],
+  "action_items": [],
+  "critical_code_review_comments": ["Non-blocking: Recharts warns about container width/height(-1) on SOC Manager page load (multiple times) - container sizing issue that may cause layout flicker on slow renders."],
+  "updated_files": ["/app/backend/tests/test_bugs_iter10.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "admin@mssp-soc.io / Iris-df02a9d88045!Aa9",
+  "seed_data_creation": "None - used the tenant 'all' data already uploaded by main agent (XSOAR 5516, QRadar 4927, 795 log sources).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "IRIS chat endpoint is POST /api/copilot/chat (not /api/iris/chat). Log-sources summary shape returns fields at top level (no 'summary' wrapper). Tenant 'all' contains real production-like data; do NOT clear it."
+}

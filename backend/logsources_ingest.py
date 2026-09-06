@@ -10,6 +10,7 @@ Column detection is flexible so it works across QRadar export variants.
 from __future__ import annotations
 
 import io
+import re
 from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +19,18 @@ import pandas as pd
 
 def _norm(c: str) -> str:
     return str(c).strip().lower().replace("_", " ").replace("-", " ").strip()
+
+
+def _clean_dt(v) -> Optional[str]:
+    """Parse dates like 'Jul 19, 2026 3:06 AM (IST)' — strip the trailing
+    timezone in parentheses, then parse."""
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return None
+    s = re.sub(r"\s*\([^)]*\)\s*$", "", str(v)).strip()
+    if not s:
+        return None
+    ts = pd.to_datetime(s, errors="coerce")
+    return None if pd.isna(ts) else ts.isoformat()
 
 
 def _find(cols: Dict[str, str], *candidates) -> Optional[str]:
@@ -69,8 +82,7 @@ def parse_rows(contents: bytes, filename: str) -> List[Dict[str, Any]]:
             enabled = _truthy_enabled(r.get(enabled_col)) if enabled_col else None
             created = None
             if created_col is not None:
-                created = pd.to_datetime(r.get(created_col), errors="coerce", utc=True)
-                created = None if pd.isna(created) else created.isoformat()
+                created = _clean_dt(r.get(created_col))
             if not nm and enabled_col is None and created_col is None:
                 continue
             out.append({"name": nm, "enabled": enabled, "created": created})
@@ -116,9 +128,10 @@ async def compute(db, tenant_id: str) -> Dict[str, Any]:
     dated = [pd.to_datetime(r["created"]) for r in rows if r.get("created")]
     added_recent = 0
     if dated:
-        newest = max(dated)
-        cutoff = newest - timedelta(days=30)
-        added_recent = sum(1 for d in dated if d >= cutoff)
+        # "New log sources added" = created in the latest month present in the
+        # file (e.g. uploading July data → sources created in July are new).
+        latest = max(dated)
+        added_recent = sum(1 for d in dated if d.year == latest.year and d.month == latest.month)
 
     return {
         "data_status": "live",

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="28.600" timestamp="2026-09-06T12:50:25.554511+00:00" hostname="agent-env-58e13d00-b716-4bcb-be22-13997e5c47ca"><testcase classname="tests.test_bugs_iter10" name="test_logsources_summary" time="0.648" /><testcase classname="tests.test_bugs_iter10" name="test_qradar_summary" time="1.010" /><testcase classname="tests.test_bugs_iter10" name="test_executive" time="3.072" /><testcase classname="tests.test_bugs_iter10" name="test_iris_chat" time="0.131"><failure message="AssertionError: {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404]&gt;.status_code">backend/tests/test_bugs_iter10.py:61: in test_iris_chat
+    assert r.status_code == 200, r.text
+E   AssertionError: {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404]&gt;.status_code</failure></testcase><testcase classname="tests.test_bugs_iter10" name="test_pptx_export" time="23.379" /></testsuite></testsuites>
